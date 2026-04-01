@@ -557,9 +557,14 @@
     btn.disabled = true;
     btn.textContent = '⏳ Verificando seus dados...';
 
-    // Preenche e envia o form invisível do Brevo
-    document.getElementById('brevo-email').value = document.getElementById('inp-email').value.trim();
-    document.getElementById('sib-form').submit();
+    // Envia ao Brevo via fetch — sem redirecionar a página
+    var brevoUrl = 'https://a9e1c917.sibforms.com/serve/MUIFAC6sQbflKz9_NNgTTJ8TKRIEnFVUsf6qf3i9BsQIb1O2MB9c4GPpRYOUw_w7jT8i_zY98Rr_DwGTOtqizq1r4SPmTYF1ED4dCIL-V5j2xwltdqV897Xf04sNqd46trc6_ufgA-XiqHuKIQrVkDFvHOwySvNVq6ZViqBxivVF_c6fKLsyPX82ZFP_TGhLb-EC_Xw2DcSEF5dWwQ==';
+    fetch(brevoUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'EMAIL=' + encodeURIComponent(document.getElementById('inp-email').value.trim()) + '&email_address_check=&locale=pt'
+    }).catch(function(){});
 
     // Mostra mensagem intermediária
     setTimeout(function() {
