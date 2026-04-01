@@ -534,16 +534,16 @@
     }
   }
 
-  let cadastroConcluido = false;
+  // Token gerado no momento do cadastro e salvo na sessão
+  const TOKEN_KEY = 'ep_acesso';
 
-  function mostrarErro(msg) {
-    const t = document.getElementById('toast-erro');
-    t.textContent = msg;
-    t.classList.add('visivel');
+  function gerarToken() {
+    return Math.random().toString(36).slice(2) + Date.now().toString(36);
   }
 
-  function esconderErro() {
-    document.getElementById('toast-erro').classList.remove('visivel');
+  function mostrarSucesso() {
+    document.getElementById('form-section').style.display = 'none';
+    document.getElementById('success-section').style.display = 'block';
   }
 
   function handleSubmit() {
@@ -555,24 +555,40 @@
 
     const btn = document.getElementById('btn-main');
     btn.disabled = true;
-    btn.textContent = '⏳ Cadastrando...';
+    btn.textContent = '⏳ Verificando seus dados...';
 
     // Preenche e envia o form invisível do Brevo
     document.getElementById('brevo-email').value = document.getElementById('inp-email').value.trim();
     document.getElementById('sib-form').submit();
 
-    // Mostra tela de sucesso após pequeno delay
+    // Mostra mensagem intermediária
     setTimeout(function() {
-      cadastroConcluido = true;
-      document.getElementById('form-section').style.display = 'none';
-      document.getElementById('success-section').style.display = 'block';
-    }, 1500);
+      btn.textContent = '📧 Verifique seu e-mail ou aguarde alguns instantes.';
+    }, 2000);
+
+    // Salva token e mostra sucesso
+    setTimeout(function() {
+      const token = gerarToken();
+      sessionStorage.setItem(TOKEN_KEY, token);
+      mostrarSucesso();
+    }, 4000);
   }
 
   function abrirApp() {
-    if (cadastroConcluido) window.open('https://drive.google.com/file/d/1SorXH1WeErXHJ6GaUdiAPjC3TaI852uT/view?usp=sharing', '_blank');
-    else alert('Preencha o cadastro primeiro para liberar o download!');
+    if (sessionStorage.getItem(TOKEN_KEY)) {
+      window.open('https://drive.google.com/file/d/1SorXH1WeErXHJ6GaUdiAPjC3TaI852uT/view?usp=sharing', '_blank');
+    } else {
+      alert('Preencha o cadastro primeiro para liberar o download!');
+    }
   }
+
+  // Se o usuário voltar com o botão do navegador, o token não existe → volta ao form
+  window.addEventListener('pageshow', function(e) {
+    if (!sessionStorage.getItem(TOKEN_KEY)) {
+      document.getElementById('form-section').style.display = 'block';
+      document.getElementById('success-section').style.display = 'none';
+    }
+  });
 </script>
 
 <!-- Formulário invisível do Brevo -->
