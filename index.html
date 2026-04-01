@@ -6,6 +6,8 @@
 <title>Eletricista Power — Organize seu negócio</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet" />
+<!-- Brevo styles -->
+<link rel="stylesheet" href="https://sibforms.com/forms/end-form/build/sib-styles.css">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -202,7 +204,6 @@
   .field .hint.erro { color: #f87171; }
   .field .hint.ok   { color: var(--green); }
 
-  /* Botão — amarelo padrão, verde quando tudo OK */
   .btn-main {
     width: 100%; padding: 14px;
     font-size: 15px; font-weight: 600; font-family: 'Barlow', sans-serif;
@@ -213,6 +214,7 @@
   }
   .btn-main:hover { background: #e6b800; transform: translateY(-1px); }
   .btn-main:active { transform: scale(0.98); }
+  .btn-main:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
 
   .btn-main.pronto {
     background: var(--green);
@@ -270,6 +272,21 @@
     padding-top: 1rem; margin-top: 1.5rem;
     border-top: 0.5px solid #222;
   }
+
+  /* Toast de erro da API */
+  .toast-erro {
+    display: none;
+    background: rgba(220,50,50,0.15);
+    border: 1px solid rgba(220,50,50,0.4);
+    color: #f87171;
+    font-size: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: 12px;
+    text-align: center;
+    line-height: 1.5;
+  }
+  .toast-erro.visivel { display: block; }
 
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(18px); }
@@ -364,6 +381,7 @@
       <button class="btn-main" id="btn-main" onclick="handleSubmit()">
         Liberar meu download grátis ⚡
       </button>
+      <div class="toast-erro" id="toast-erro"></div>
       <p class="privacy">🔒 Seus dados estão seguros. Zero spam, palavra de eletricista.</p>
     </div>
 
@@ -384,7 +402,13 @@
 </div>
 
 <script>
-  // DDDs válidos do Brasil
+  // ============================================================
+  // ⚙️ CONFIGURAÇÕES — preencha antes de publicar
+  // ============================================================
+  const BREVO_API_KEY   = 'SUA_API_KEY_AQUI';   // Ex: xkeysib-abc123...
+  const BREVO_LIST_ID   = 0;                     // ID numérico da sua lista no Brevo
+  // ============================================================
+
   const dddsValidos = new Set([
     11,12,13,14,15,16,17,18,19,
     21,22,24,27,28,
@@ -397,7 +421,6 @@
     91,92,93,94,95,96,97,98,99
   ]);
 
-  // Atualiza placeholder conforme país
   document.getElementById('sel-pais').addEventListener('change', function () {
     const pais = this.value;
     const inp = document.getElementById('inp-whats');
@@ -407,7 +430,6 @@
     setEstado('whats', false, '');
   });
 
-  // Máscara apenas para Brasil
   document.getElementById('inp-whats').addEventListener('input', function () {
     const pais = document.getElementById('sel-pais').value;
     if (pais === 'BR') {
@@ -419,6 +441,7 @@
     }
     validarWhats();
   });
+
   const dominiosSuspeitos = {
     'gmial.com':'gmail.com','gmai.com':'gmail.com','gamil.com':'gmail.com',
     'gnail.com':'gmail.com','gmal.com':'gmail.com','gmail.co':'gmail.com',
@@ -513,6 +536,16 @@
 
   let cadastroConcluido = false;
 
+  function mostrarErro(msg) {
+    const t = document.getElementById('toast-erro');
+    t.textContent = msg;
+    t.classList.add('visivel');
+  }
+
+  function esconderErro() {
+    document.getElementById('toast-erro').classList.remove('visivel');
+  }
+
   function handleSubmit() {
     validarNome(); validarEmail(); validarWhats();
     if (!estado.nome || !estado.email || !estado.whats) {
@@ -520,18 +553,20 @@
       return;
     }
 
-    /* INTEGRAÇÃO SUPABASE
-    const SUPABASE_URL = 'https://SEU_PROJETO.supabase.co';
-    const SUPABASE_KEY = 'SUA_ANON_KEY';
-    fetch(`${SUPABASE_URL}/rest/v1/leads`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
-      body: JSON.stringify({ nome: document.getElementById('inp-nome').value.trim(), email: document.getElementById('inp-email').value.trim(), whatsapp: document.getElementById('inp-whats').value.trim() })
-    }); */
+    const btn = document.getElementById('btn-main');
+    btn.disabled = true;
+    btn.textContent = '⏳ Cadastrando...';
 
-    cadastroConcluido = true;
-    document.getElementById('form-section').style.display = 'none';
-    document.getElementById('success-section').style.display = 'block';
+    // Preenche e envia o form invisível do Brevo
+    document.getElementById('brevo-email').value = document.getElementById('inp-email').value.trim();
+    document.getElementById('sib-form').submit();
+
+    // Mostra tela de sucesso após pequeno delay
+    setTimeout(function() {
+      cadastroConcluido = true;
+      document.getElementById('form-section').style.display = 'none';
+      document.getElementById('success-section').style.display = 'block';
+    }, 1500);
   }
 
   function abrirApp() {
@@ -539,6 +574,25 @@
     else alert('Preencha o cadastro primeiro para liberar o download!');
   }
 </script>
+
+<!-- Formulário invisível do Brevo -->
+<form id="sib-form" method="POST" action="https://a9e1c917.sibforms.com/serve/MUIFAC6sQbflKz9_NNgTTJ8TKRIEnFVUsf6qf3i9BsQIb1O2MB9c4GPpRYOUw_w7jT8i_zY98Rr_DwGTOtqizq1r4SPmTYF1ED4dCIL-V5j2xwltdqV897Xf04sNqd46trc6_ufgA-XiqHuKIQrVkDFvHOwySvNVq6ZViqBxivVF_c6fKLsyPX82ZFP_TGhLb-EC_Xw2DcSEF5dWwQ==" data-type="subscription" style="display:none">
+  <input type="text" name="EMAIL" id="brevo-email" />
+  <input type="text" name="email_address_check" value="" class="input--hidden">
+  <input type="hidden" name="locale" value="pt">
+  <button type="submit" id="brevo-submit"></button>
+</form>
+
+<script>
+  window.REQUIRED_CODE_ERROR_MESSAGE = 'Escolha um código de país';
+  window.LOCALE = 'pt';
+  window.EMAIL_INVALID_MESSAGE = window.SMS_INVALID_MESSAGE = "A informação fornecida não é valida. Verifique o formato do campo e tente novamente.";
+  window.REQUIRED_ERROR_MESSAGE = "Este campo não pode ser deixado em branco. ";
+  window.GENERIC_INVALID_MESSAGE = "A informação fornecida não é valida. Verifique o formato do campo e tente novamente.";
+  window.translation = { common: { selectedList: '{quantity} lista selecionada', selectedLists: '{quantity} listas selecionadas', selectedOption: '{quantity} selecionado', selectedOptions: '{quantity} selecionados' } };
+  var AUTOHIDE = Boolean(0);
+</script>
+<script defer src="https://sibforms.com/forms/end-form/build/main.js"></script>
 
 </body>
 </html>
