@@ -347,6 +347,13 @@
       </div>
 
       <div class="field">
+        <label>CONFIRME SEU E-MAIL</label>
+        <input type="email" id="inp-email2" placeholder="joao@email.com" autocomplete="off" />
+        <span class="status-icon" id="icon-email2"></span>
+        <div class="hint" id="hint-email2"></div>
+      </div>
+
+      <div class="field">
         <label>WHATSAPP COM DDD</label>
         <div style="display:flex;gap:8px;align-items:center;">
           <select id="sel-pais" style="padding:10px 8px;border-radius:8px;border:2px solid #333;background:#1a1a1a;color:#fff;font-size:14px;cursor:pointer;min-width:110px;">
@@ -451,10 +458,11 @@
     'outlok.com':'outlook.com','outloo.com':'outlook.com','outllok.com':'outlook.com'
   };
 
-  const estado = { nome: false, email: false, whats: false };
+  const estado = { nome: false, email: false, email2: false, whats: false };
 
   document.getElementById('inp-nome').addEventListener('input', validarNome);
-  document.getElementById('inp-email').addEventListener('input', validarEmail);
+  document.getElementById('inp-email').addEventListener('input', function() { validarEmail(); validarEmail2(); });
+  document.getElementById('inp-email2').addEventListener('input', validarEmail2);
 
   function setEstado(campo, ok, msg) {
     const inp  = document.getElementById('inp-' + campo);
@@ -497,6 +505,14 @@
     setEstado('email', true, 'E-mail válido ✓');
   }
 
+  function validarEmail2() {
+    const v1 = document.getElementById('inp-email').value.trim();
+    const v2 = document.getElementById('inp-email2').value.trim();
+    if (!v2) { setEstado('email2', false, ''); return; }
+    if (v1 !== v2) setEstado('email2', false, 'Os e-mails não coincidem.');
+    else           setEstado('email2', true, 'E-mails conferem ✓');
+  }
+
   function validarWhats() {
     const v = document.getElementById('inp-whats').value.trim();
     const pais = document.getElementById('sel-pais').value;
@@ -524,7 +540,7 @@
 
   function atualizarBotao() {
     const btn = document.getElementById('btn-main');
-    const tudo = estado.nome && estado.email && estado.whats;
+    const tudo = estado.nome && estado.email && estado.email2 && estado.whats;
     if (tudo) {
       btn.classList.add('pronto');
       btn.textContent = '✅ Tudo certo! Liberar meu download grátis';
@@ -547,8 +563,8 @@
   }
 
   function handleSubmit() {
-    validarNome(); validarEmail(); validarWhats();
-    if (!estado.nome || !estado.email || !estado.whats) {
+    validarNome(); validarEmail(); validarEmail2(); validarWhats();
+    if (!estado.nome || !estado.email || !estado.email2 || !estado.whats) {
       alert('Corrija os campos destacados antes de continuar.');
       return;
     }
